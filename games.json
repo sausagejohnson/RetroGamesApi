@@ -1,0 +1,55 @@
+{
+  "games": [
+    {
+      "game_id": 1,
+      "title": "The Secret Of Monkey Island",
+      "year": 1990
+    },
+    {
+      "game_id": 2,
+      "title": "Wizball",
+      "year": 1987
+    },
+    {
+      "game_id": 3,
+      "title": "Twinsen's Odyssey",
+      "year": 1997
+    },
+    {
+      "game_id": 4,
+      "title": "Commander Blood",
+      "year": 1994
+    },
+    {
+      "game_id": 5,
+      "title": "Half Life 2",
+      "year": 2004
+    },
+    {
+      "game_id": 6,
+      "title": "No Man's Sky",
+      "year": 2016
+    },
+    {
+      "game_id": 7,
+      "title": "Beneath a Steel Sky",
+      "year": 1994
+    },
+    {
+      "game_id": 8,
+      "title": "Duke Nukem 3D",
+      "year": 1996
+    },
+    {
+      "game_id": 9,
+      "title": "Raster Blaster",
+      "year": 1981
+    },
+    {
+      "game_id": 10,
+      "title": "Outpost Bandit",
+      "year": 2019
+    }
+
+  ]
+}
