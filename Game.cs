@@ -14,4 +14,13 @@ namespace RetroGamesApi
         [JsonProperty("year")]
         public int Year { get; set; }
     }
+
+    public class RawGame
+    {
+        [JsonProperty("title")]
+        public string Title { get; set; }
+
+        [JsonProperty("year")]
+        public int Year { get; set; }
+    }
 }

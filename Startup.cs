@@ -26,6 +26,7 @@ namespace RetroGamesApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -42,7 +43,7 @@ namespace RetroGamesApi
 
             app.UseAuthorization();
 
-            app.UseCors(b => b.AllowAnyOrigin());
+            app.UseCors(b => b.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
             app.UseEndpoints(endpoints =>
             {

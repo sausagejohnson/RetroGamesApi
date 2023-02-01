@@ -6,6 +6,6 @@ namespace RetroGamesApi
     public class Games
     {
         [JsonProperty("games")]
-        public IEnumerable<Game> GamesList { get; set; }
+        public List<Game> GamesList { get; set; }
     }
 }

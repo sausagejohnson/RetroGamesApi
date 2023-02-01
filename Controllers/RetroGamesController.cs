@@ -12,6 +12,7 @@ namespace RetroGamesApi.Controllers
 {
     [ApiController]
     [Route("api")]
+    [CreateDataActionFilterAttribute]
     public class RetroGamesController : ControllerBase
     {
 
@@ -19,8 +20,8 @@ namespace RetroGamesApi.Controllers
         [Route("games")]
         public IEnumerable<Game> Get()
         {
-            string jsonContent = System.IO.File.ReadAllText("games.json");
-            Games games = JsonConvert.DeserializeObject<Games>(jsonContent);
+            DataSentinel sentinel = new DataSentinel(this.HttpContext);
+            Games games = sentinel.ConvertRawToGames();
 
             return games.GamesList;
         }
@@ -29,11 +30,25 @@ namespace RetroGamesApi.Controllers
         [Route("games/{id}")]
         public Game Get(int id)
         {
-            string jsonContent = System.IO.File.ReadAllText("games.json");
-            Games games = JsonConvert.DeserializeObject<Games>(jsonContent);
+            DataSentinel sentinel = new DataSentinel(this.HttpContext);
+            Games games = sentinel.ConvertRawToGames();
             Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
 
             return game;
+        }
+
+        [HttpPost]
+        [Route("games")]
+        public IEnumerable<Game> Post([FromBody] Game game)
+        {
+            game.GameId = new Random().Next(11, 999999);
+
+            DataSentinel sentinel = new DataSentinel(this.HttpContext);
+            Games games = sentinel.ConvertRawToGames();
+            games.GamesList.Add(game);
+            sentinel.WriteNewGameFile(games);
+
+            return games.GamesList;
         }
     }
 }
