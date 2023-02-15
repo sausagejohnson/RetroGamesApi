@@ -1,12 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace RetroGamesApi.Controllers
 {
@@ -18,37 +11,55 @@ namespace RetroGamesApi.Controllers
 
         [HttpGet]
         [Route("games")]
-        public IEnumerable<Game> Get()
+        public IActionResult Get()
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext);
-            Games games = sentinel.ConvertRawToGames();
+            Games games = sentinel.ConvertJSONToGames();
 
-            return games.GamesList;
+            return Ok(games.GamesList);
         }
 
         [HttpGet]
         [Route("games/{id}")]
-        public Game Get(int id)
+        public IActionResult Get(int id)
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext);
-            Games games = sentinel.ConvertRawToGames();
+            Games games = sentinel.ConvertJSONToGames();
             Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
 
-            return game;
+            return Ok(game);
         }
 
         [HttpPost]
         [Route("games")]
-        public IEnumerable<Game> Post([FromBody] Game game)
+        public IActionResult Post([FromBody] Game game)
         {
-            game.GameId = new Random().Next(11, 999999);
-
             DataSentinel sentinel = new DataSentinel(this.HttpContext);
-            Games games = sentinel.ConvertRawToGames();
-            games.GamesList.Add(game);
-            sentinel.WriteNewGameFile(games);
+            Games updatedGames = sentinel.AddGame(game);
 
-            return games.GamesList;
+            return Created("/games", updatedGames.GamesList);
+        }
+
+        [HttpPut]
+        [Route("games")]
+        public IActionResult Put([FromBody] Game game)
+        {
+            DataSentinel sentinel = new DataSentinel(this.HttpContext);
+            Games updatedGames = sentinel.UpdateGame(game);
+
+            return Ok(updatedGames.GamesList);
+        }
+
+        [HttpDelete]
+        [Route("games/{id}")]
+        public IActionResult Delete(int id)
+        {
+            DataSentinel sentinel = new DataSentinel(this.HttpContext);
+            Games updatedGames = sentinel.DeleteGame(id);
+            if (updatedGames != null && updatedGames.GamesList.Any())
+                return Ok(updatedGames.GamesList);
+            else
+                return NotFound();
         }
     }
 }

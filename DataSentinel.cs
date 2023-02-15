@@ -17,10 +17,11 @@ namespace RetroGamesApi
             Folder = @"publicdata\";
             FilePath = Folder + PublicId + ".json";
 
+            CreateDataFolderIfNotExists();
             CleanUpDataFiles();
         }
 
-        public Games ConvertRawToGames()
+        public Games ConvertJSONToGames()
         {
             CreateDataFileIfNotExists();
             string jsonContent = File.ReadAllText(this.FilePath);
@@ -45,14 +46,76 @@ namespace RetroGamesApi
             }
         }
 
+        public Games AddGame(Game newGame)
+        {
+            newGame.GameId = this.GetNextID().Value;
+
+            Games games = this.ConvertJSONToGames();
+            games.GamesList.Add(newGame);
+            this.WriteNewGameFile(games);
+
+            return games;
+        }
+
+        public Games UpdateGame(Game updatedGame)
+        {
+            Games games = this.ConvertJSONToGames();
+            Game game = games.GamesList.Find(x => x.GameId == updatedGame.GameId);
+
+            if (game != null)
+            {
+                game.Title = updatedGame.Title;
+                game.Year = updatedGame.Year;
+
+                this.WriteNewGameFile(games);
+            }
+            return games;
+        }
+
+        public Games DeleteGame(int gameIdToDelete)
+        {
+            Games games = this.ConvertJSONToGames();
+            Game game = games.GamesList.Find(x => x.GameId == gameIdToDelete);
+
+            if (game != null)
+            {
+                games.GamesList.Remove(game);
+                this.WriteNewGameFile(games);
+                //return true;
+                return games;
+            }
+            return null;
+        }
+
         internal void WriteNewGameFile(Games games)
         {
             string json = JsonConvert.SerializeObject(games, Formatting.Indented);
             File.WriteAllText(this.FilePath, json);
         }
 
+        private int? GetNextID()
+        {
+            int? id = null;
+            Games games = this.ConvertJSONToGames();
+            games.GamesList.ForEach(game => 
+                id = (game.GameId > id || id == null) ? game.GameId : id
+            );
+
+            return ++id;
+        }
+
+        private void CreateDataFolderIfNotExists()
+        {
+            if (!Directory.Exists(this.Folder))
+            {
+                Directory.CreateDirectory(this.Folder);
+            }
+        }
+
         private void CleanUpDataFiles()
         {
+            CreateDataFolderIfNotExists();
+
             string[] userDataFiles = Directory.GetFiles(this.Folder);
             foreach (string file in userDataFiles)
             {
@@ -60,7 +123,7 @@ namespace RetroGamesApi
                 DateTime nowUTC = DateTime.UtcNow;
 
                 TimeSpan difference = nowUTC.Subtract(createdTime);
-                if (difference.Seconds > 300)
+                if (difference.TotalSeconds > 300)
                 {
                     if (File.Exists(file))
                     {
