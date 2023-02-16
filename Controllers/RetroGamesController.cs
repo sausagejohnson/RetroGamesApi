@@ -13,7 +13,7 @@ namespace RetroGamesApi.Controllers
         [Route("games")]
         public IActionResult Get()
         {
-            DataSentinel sentinel = new DataSentinel(this.HttpContext);
+            DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
             Games games = sentinel.ConvertJSONToGames();
 
             return Ok(games.GamesList);
@@ -23,7 +23,7 @@ namespace RetroGamesApi.Controllers
         [Route("games/{id}")]
         public IActionResult Get(int id)
         {
-            DataSentinel sentinel = new DataSentinel(this.HttpContext);
+            DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
             Games games = sentinel.ConvertJSONToGames();
             Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
 
@@ -34,7 +34,7 @@ namespace RetroGamesApi.Controllers
         [Route("games")]
         public IActionResult Post([FromBody] Game game)
         {
-            DataSentinel sentinel = new DataSentinel(this.HttpContext);
+            DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
             Games updatedGames = sentinel.AddGame(game);
 
             return Created("/games", updatedGames.GamesList);
@@ -44,7 +44,7 @@ namespace RetroGamesApi.Controllers
         [Route("games")]
         public IActionResult Put([FromBody] Game game)
         {
-            DataSentinel sentinel = new DataSentinel(this.HttpContext);
+            DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
             Games updatedGames = sentinel.UpdateGame(game);
 
             return Ok(updatedGames.GamesList);
@@ -54,7 +54,7 @@ namespace RetroGamesApi.Controllers
         [Route("games/{id}")]
         public IActionResult Delete(int id)
         {
-            DataSentinel sentinel = new DataSentinel(this.HttpContext);
+            DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
             Games updatedGames = sentinel.DeleteGame(id);
             if (updatedGames != null && updatedGames.GamesList.Any())
                 return Ok(updatedGames.GamesList);

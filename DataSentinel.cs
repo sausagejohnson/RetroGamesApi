@@ -11,9 +11,9 @@ namespace RetroGamesApi
         public string Folder { get; set; }
         public string FilePath { get; set; }
 
-        public DataSentinel(HttpContext context)
+        public DataSentinel(string connectionId)
         {
-            PublicId = context.Connection.Id;
+            PublicId = connectionId;
             Folder = @"publicdata\";
             FilePath = Folder + PublicId + ".json";
 

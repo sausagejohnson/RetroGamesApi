@@ -15,7 +15,7 @@ namespace RetroGamesApi
              * https://stackoverflow.com/questions/50689315/how-is-httpcontext-traceidentifier-generated-in-net-core
              */
 
-            DataSentinel sentinel = new DataSentinel(context.HttpContext);
+            DataSentinel sentinel = new DataSentinel(context.HttpContext.Connection.Id);
             sentinel.CreateDataFileIfNotExists();
         }
     }
