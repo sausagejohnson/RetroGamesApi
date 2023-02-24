@@ -1,0 +1,48 @@
+{
+  "platforms": [
+    {
+      "platform_id": 1,
+      "name": "DOS"
+    },
+    {
+      "platform_id": 2,
+      "name": "Commodore 64"
+    },
+    {
+      "platform_id": 3,
+      "name": "Amiga"
+    },
+    {
+      "platform_id": 4,
+      "name": "Windows"
+    },
+    {
+      "platform_id": 5,
+      "name": "Linux"
+    },
+    {
+      "platform_id": 6,
+      "name": "Mac OSX"
+    },
+    {
+      "platform_id": 7,
+      "name": "Android"
+    },
+    {
+      "platform_id": 8,
+      "name": "IOS"
+    },
+    {
+      "platform_id": 9,
+      "name": "Playstation"
+    },
+    {
+      "platform_id": 10,
+      "name": "Nintendo 64"
+    },
+    {
+      "platform_id": 11,
+      "name": "Apple II"
+    }
+  ]
+}

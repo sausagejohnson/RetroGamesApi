@@ -16,7 +16,7 @@ namespace RetroGamesApi
              */
 
             DataSentinel sentinel = new DataSentinel(context.HttpContext.Connection.Id);
-            sentinel.CreateDataFileIfNotExists();
+            sentinel.CreateDataFilesIfNotExists();
         }
     }
 }

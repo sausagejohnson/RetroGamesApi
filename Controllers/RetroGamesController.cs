@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RetroGamesApi.Controllers
@@ -14,7 +15,7 @@ namespace RetroGamesApi.Controllers
         public IActionResult Get()
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
-            Games games = sentinel.ConvertJSONToGames();
+            Games games = sentinel.GetAllGames();
 
             return Ok(games.GamesList);
         }
@@ -24,8 +25,7 @@ namespace RetroGamesApi.Controllers
         public IActionResult Get(int id)
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
-            Games games = sentinel.ConvertJSONToGames();
-            Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
+            Game game = sentinel.GetGameById(id);
 
             return Ok(game);
         }
@@ -47,6 +47,11 @@ namespace RetroGamesApi.Controllers
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
             Games updatedGames = sentinel.UpdateGame(game);
 
+            if (updatedGames == null)
+            {
+                return NotFound();
+            }
+
             return Ok(updatedGames.GamesList);
         }
 
@@ -60,6 +65,26 @@ namespace RetroGamesApi.Controllers
                 return Ok(updatedGames.GamesList);
             else
                 return NotFound();
+        }
+
+        [HttpGet]
+        [Route("games/{id}/platforms")]
+        public IActionResult GetPlatforms(int id)
+        {
+            DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
+            List<Platform> platforms = sentinel.GetPlatformsByGameId(id);
+
+            return Ok(platforms);
+        }
+        
+        [HttpGet]
+        [Route("platforms")]
+        public IActionResult GetAllPlatforms()
+        {
+            DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
+            Platforms platforms = sentinel.GetAllPlatforms();
+
+            return Ok(platforms.PlatformsList);
         }
     }
 }
