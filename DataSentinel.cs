@@ -87,10 +87,61 @@ namespace RetroGamesApi
             return platforms;
         }
 
+        public List<Game> AddPlatformIdToGameId(int id, int platformId)
+        {
+            Games games = this.ConvertJSONToGames();
+            Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
+
+            if (game == null)
+            {
+                return null;
+            }
+
+            if (!game.platformIds.Contains(platformId))
+            {
+                List<int> platformIdList = game.platformIds.ToList();
+                platformIdList.Add(platformId);
+
+                game.platformIds = platformIdList.ToArray();
+            }
+
+            games = UpdateGame(game, game.GameId);
+            return games.GamesList;
+
+        }
+
+        public List<Game> DeletePlatformIdFromGameId(int id, int platformId)
+        {
+            Games games = this.ConvertJSONToGames();
+            Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
+
+            if (game == null)
+            {
+                return null;
+            }
+
+            if (game.platformIds.Contains(platformId))
+            {
+                List<int> platformIdList = game.platformIds.ToList();
+                platformIdList.Remove(platformId);
+
+                game.platformIds = platformIdList.ToArray();
+            }
+
+            games = UpdateGame(game, game.GameId);
+            return games.GamesList;
+
+        }
+
         public List<Platform> GetPlatformsByGameId(int id)
         {
             Games games = this.ConvertJSONToGames();
             Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
+            if (game == null)
+            {
+                return null;
+            }
+
             Platforms platforms = this.ConvertJSONToPlatforms();
             Game stitchedGame = StitchPlatformsOntoGame(game, platforms);
 
@@ -127,23 +178,28 @@ namespace RetroGamesApi
             return this.StitchPlatformsOntoGames(games, platforms);
         }
 
-        public Games UpdateGame(Game updatedGame)
+        public Games UpdateGame(Game updatedGame, int gameId)
         {
-            if (updatedGame.GameId == 0)
+            if (gameId == 0)
                 return null;
 
             Games games = this.ConvertJSONToGames();
-            Game game = games.GamesList.Find(x => x.GameId == updatedGame.GameId);
+            Game game = games.GamesList.Find(x => x.GameId == gameId);
 
-            if (game != null)
+            if (game == null)
             {
-                if (updatedGame.Title != null)
-                    game.Title = updatedGame.Title;
-                if (updatedGame.Year > 0)
-                    game.Year = updatedGame.Year;
+                return null;
+            } 
 
-                this.WriteNewGameFile(games);
-            }
+            if (updatedGame.Title != null)
+                game.Title = updatedGame.Title;
+            if (updatedGame.Year > 0)
+                game.Year = updatedGame.Year;
+            if (updatedGame.platformIds != null && updatedGame.platformIds.Length > 0)
+                game.platformIds = updatedGame.platformIds; //.ToArray();
+
+            this.WriteNewGameFile(games);
+
             Platforms platforms = this.ConvertJSONToPlatforms();
             return this.StitchPlatformsOntoGames(games, platforms);
         }

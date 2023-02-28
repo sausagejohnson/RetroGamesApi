@@ -41,11 +41,11 @@ namespace RetroGamesApi.Controllers
         }
 
         [HttpPut]
-        [Route("games")]
-        public IActionResult Put([FromBody] Game game)
+        [Route("games/{id}")]
+        public IActionResult Put([FromBody] Game game, int id)
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
-            Games updatedGames = sentinel.UpdateGame(game);
+            Games updatedGames = sentinel.UpdateGame(game, id);
 
             if (updatedGames == null)
             {
@@ -76,7 +76,27 @@ namespace RetroGamesApi.Controllers
 
             return Ok(platforms);
         }
-        
+
+        [HttpPost]
+        [Route("games/{id}/platform/{platformId}")]
+        public IActionResult AddPlatform(int id, int platformId)
+        {
+            DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
+            List<Game> games = sentinel.AddPlatformIdToGameId(id, platformId);
+
+            return Ok(games);
+        }
+
+        [HttpDelete]
+        [Route("games/{id}/platform/{platformId}")]
+        public IActionResult DeletePlatform(int id, int platformId)
+        {
+            DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
+            List<Game> games = sentinel.DeletePlatformIdFromGameId(id, platformId);
+
+            return Ok(games);
+        }
+
         [HttpGet]
         [Route("platforms")]
         public IActionResult GetAllPlatforms()
