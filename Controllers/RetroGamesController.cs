@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using RetroGamesApi.DTOs;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,9 +16,9 @@ namespace RetroGamesApi.Controllers
         public IActionResult Get()
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
-            Games games = sentinel.GetAllGames();
+            List<GameDTO> games = sentinel.GetAllGames();
 
-            return Ok(games.GamesList);
+            return Ok(games);
         }
 
         [HttpGet]
@@ -25,34 +26,34 @@ namespace RetroGamesApi.Controllers
         public IActionResult Get(int id)
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
-            Game game = sentinel.GetGameById(id);
+            GameDTO game = sentinel.GetGameById(id);
 
             return Ok(game);
         }
 
         [HttpPost]
         [Route("games")]
-        public IActionResult Post([FromBody] Game game)
+        public IActionResult Post([FromBody] GameDTO game)
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
-            Games updatedGames = sentinel.AddGame(game);
+            List<GameDTO> updatedGames = sentinel.AddGame(game);
 
-            return Created("/games", updatedGames.GamesList);
+            return Created("/games", updatedGames);
         }
 
         [HttpPut]
         [Route("games/{id}")]
-        public IActionResult Put([FromBody] Game game, int id)
+        public IActionResult Put([FromBody] GameDTO game, int id)
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
-            Games updatedGames = sentinel.UpdateGame(game, id);
+            List<GameDTO> updatedGames = sentinel.UpdateGame(game, id);
 
             if (updatedGames == null)
             {
                 return NotFound();
             }
 
-            return Ok(updatedGames.GamesList);
+            return Ok(updatedGames);
         }
 
         [HttpDelete]
@@ -60,9 +61,9 @@ namespace RetroGamesApi.Controllers
         public IActionResult Delete(int id)
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
-            Games updatedGames = sentinel.DeleteGame(id);
-            if (updatedGames != null && updatedGames.GamesList.Any())
-                return Ok(updatedGames.GamesList);
+            List<GameDTO> updatedGames = sentinel.DeleteGame(id);
+            if (updatedGames != null && updatedGames.Any())
+                return Ok(updatedGames);
             else
                 return NotFound();
         }
@@ -82,7 +83,7 @@ namespace RetroGamesApi.Controllers
         public IActionResult AddPlatform(int id, int platformId)
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
-            List<Game> games = sentinel.AddPlatformIdToGameId(id, platformId);
+            List<GameDTO> games = sentinel.AddPlatformIdToGameId(id, platformId);
 
             return Ok(games);
         }
@@ -92,7 +93,7 @@ namespace RetroGamesApi.Controllers
         public IActionResult DeletePlatform(int id, int platformId)
         {
             DataSentinel sentinel = new DataSentinel(this.HttpContext.Connection.Id);
-            List<Game> games = sentinel.DeletePlatformIdFromGameId(id, platformId);
+            List<GameDTO> games = sentinel.DeletePlatformIdFromGameId(id, platformId);
 
             return Ok(games);
         }

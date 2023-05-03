@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using RetroGamesApi.DTOs;
 
 namespace RetroGamesApi
 {
@@ -11,64 +12,68 @@ namespace RetroGamesApi
     {
         public string PublicId { get; set; }
         public string Folder { get; set; }
-        public string FilePath { get; set; }
+        public string GameFilePath { get; set; }
         public string PlatformsFilePath { get; set; }
 
         public DataSentinel(string connectionId)
         {
             PublicId = connectionId;
             Folder = @"publicdata\";
-            FilePath = Folder + PublicId + ".json";
+            GameFilePath = Folder + PublicId + ".json";
             PlatformsFilePath = Folder + PublicId + "-platform.json";
 
             CreateDataFolderIfNotExists();
             CleanUpDataFiles();
         }
 
-        public Games GetAllGames()
+        public List<GameDTO> GetAllGames()
         {
-            Games games = this.ConvertJSONToGames();
-            Platforms platforms = this.ConvertJSONToPlatforms();
-            return this.StitchPlatformsOntoGames(games, platforms);
+            List<GameDTO> gamesDtoList = this.ConvertJSONToGames();
+
+            return gamesDtoList;
         }
 
-        private Games StitchPlatformsOntoGames(Games games, Platforms platforms)
+        public GameDTO GetGameById(int id)
         {
-            games.GamesList.ForEach(g => {
-                g.platformIds.ToList().ForEach(gpi =>
-                {
-                    Platform selectedPlatform = platforms.PlatformsList.Find(p => p.PlatformId == gpi);
-                    g.Platforms.Add(selectedPlatform);
-                });
-            });
-
-            return games;
-        }
-
-        private Game StitchPlatformsOntoGame(Game game, Platforms platforms)
-        {
-            game.platformIds.ToList().ForEach(gpi =>
-            {
-                Platform selectedPlatform = platforms.PlatformsList.Find(p => p.PlatformId == gpi);
-                game.Platforms.Add(selectedPlatform);
-            });
+            List<GameDTO> games = this.GetAllGames();
+            GameDTO game = games.FirstOrDefault(g => g.GameId == id);
 
             return game;
         }
 
-        public Game GetGameById(int id)
-        {
-            Games games = this.GetAllGames();
-            Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
-
-            return game;
-        }
-
-        private Games ConvertJSONToGames()
+        private List<GameDTO> ConvertJSONToGames()
         {
             CreateDataFilesIfNotExists();
-            string jsonContent = File.ReadAllText(this.FilePath);
+            string jsonContent = File.ReadAllText(this.GameFilePath);
             Games games = JsonConvert.DeserializeObject<Games>(jsonContent);
+
+            List<GameDTO> gameDtoList = GamesToDTO(games);
+
+            return gameDtoList;
+        }
+
+        private List<GameDTO> GamesToDTO(Games games)
+        {
+            List<GameDTO> gamesDtoList = new List<GameDTO>();
+            games.GamesList.ForEach(g =>
+            {
+                gamesDtoList.Add(new GameDTO
+                {
+                    GameId = g.GameId,
+                    platformIds = g.platformIds,
+                    Title = g.Title,
+                    Year = g.Year
+                }
+                );
+            });
+
+            return gamesDtoList;
+        }
+
+        private Games DTOToGames(List<GameDTO> gamesList)
+        {
+            Games games = new Games();
+            games.GamesList = gamesList;
 
             return games;
         }
@@ -87,10 +92,10 @@ namespace RetroGamesApi
             return platforms;
         }
 
-        public List<Game> AddPlatformIdToGameId(int id, int platformId)
+        public List<GameDTO> AddPlatformIdToGameId(int id, int platformId)
         {
-            Games games = this.ConvertJSONToGames();
-            Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
+            List<GameDTO> games = this.ConvertJSONToGames();
+            GameDTO game = games.FirstOrDefault(g => g.GameId == id);
 
             if (game == null)
             {
@@ -106,14 +111,14 @@ namespace RetroGamesApi
             }
 
             games = UpdateGame(game, game.GameId);
-            return games.GamesList;
+            return games;
 
         }
 
-        public List<Game> DeletePlatformIdFromGameId(int id, int platformId)
+        public List<GameDTO> DeletePlatformIdFromGameId(int id, int platformId)
         {
-            Games games = this.ConvertJSONToGames();
-            Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
+            List<GameDTO> games = this.ConvertJSONToGames();
+            GameDTO game = games.FirstOrDefault(g => g.GameId == id);
 
             if (game == null)
             {
@@ -129,28 +134,28 @@ namespace RetroGamesApi
             }
 
             games = UpdateGame(game, game.GameId);
-            return games.GamesList;
+            return games;
 
         }
 
         public List<Platform> GetPlatformsByGameId(int id)
         {
-            Games games = this.ConvertJSONToGames();
-            Game game = games.GamesList.FirstOrDefault(g => g.GameId == id);
+            List<GameDTO> games = this.ConvertJSONToGames();
+            GameDTO game = games.FirstOrDefault(g => g.GameId == id);
             if (game == null)
             {
                 return null;
             }
 
             Platforms platforms = this.ConvertJSONToPlatforms();
-            Game stitchedGame = StitchPlatformsOntoGame(game, platforms);
+            List<Platform> gamePlatforms = platforms.PlatformsList.FindAll(p => game.platformIds.Contains(p.PlatformId));
 
-            return stitchedGame.Platforms;
+            return gamePlatforms;
         }
 
         public void CreateDataFilesIfNotExists()
         {
-            string expectedDataFilePath = this.FilePath;
+            string expectedDataFilePath = this.GameFilePath;
             string expectedPlatformDataFilePath = this.PlatformsFilePath;
 
             if (!File.Exists(expectedDataFilePath))
@@ -164,58 +169,63 @@ namespace RetroGamesApi
             }
         }
 
-        public Games AddGame(Game newGame)
+        public List<GameDTO> AddGame(GameDTO newGame)
         {
             newGame.GameId = this.GetNextID().Value;
-            newGame.platformIds = new int[0];
-            newGame.Platforms = new List<Platform>();
+            
+            if (newGame.platformIds == null)
+            {
+                newGame.platformIds = new int[0];
+            }
 
-            Games games = this.ConvertJSONToGames();
-            games.GamesList.Add(newGame);
+            List<GameDTO> dtoGames = this.ConvertJSONToGames();
+            dtoGames.Add(newGame);
+
+            Games games = DTOToGames(dtoGames);
             this.WriteNewGameFile(games);
 
-            Platforms platforms = this.ConvertJSONToPlatforms();
-            return this.StitchPlatformsOntoGames(games, platforms);
+            return dtoGames;
         }
 
-        public Games UpdateGame(Game updatedGame, int gameId)
+        public List<GameDTO> UpdateGame(GameDTO updatedGame, int gameId)
         {
             if (gameId == 0)
                 return null;
 
-            Games games = this.ConvertJSONToGames();
-            Game game = games.GamesList.Find(x => x.GameId == gameId);
+            List<GameDTO> dtoGames = this.ConvertJSONToGames();
+            GameDTO dtoGame = dtoGames.Find(x => x.GameId == gameId);
 
-            if (game == null)
+            if (dtoGame == null)
             {
                 return null;
             } 
 
             if (updatedGame.Title != null)
-                game.Title = updatedGame.Title;
+                dtoGame.Title = updatedGame.Title;
             if (updatedGame.Year > 0)
-                game.Year = updatedGame.Year;
-            if (updatedGame.platformIds != null && updatedGame.platformIds.Length > 0)
-                game.platformIds = updatedGame.platformIds; //.ToArray();
+                dtoGame.Year = updatedGame.Year;
+            if (updatedGame.platformIds != null) 
+                dtoGame.platformIds = updatedGame.platformIds; 
 
+            Games games = DTOToGames(dtoGames);
             this.WriteNewGameFile(games);
 
-            Platforms platforms = this.ConvertJSONToPlatforms();
-            return this.StitchPlatformsOntoGames(games, platforms);
+            return dtoGames;
         }
 
-        public Games DeleteGame(int gameIdToDelete)
+        public List<GameDTO> DeleteGame(int gameIdToDelete)
         {
-            Games games = this.ConvertJSONToGames();
-            Game game = games.GamesList.Find(x => x.GameId == gameIdToDelete);
+            List<GameDTO> dtoGames = this.ConvertJSONToGames();
+            GameDTO game = dtoGames.Find(x => x.GameId == gameIdToDelete);
 
             if (game != null)
             {
-                games.GamesList.Remove(game);
+                dtoGames.Remove(game);
+
+                Games games = this.DTOToGames(dtoGames);
                 this.WriteNewGameFile(games);
 
-                Platforms platforms = this.ConvertJSONToPlatforms();
-                return this.StitchPlatformsOntoGames(games, platforms);
+                return dtoGames;
             }
             return null;
         }
@@ -223,14 +233,14 @@ namespace RetroGamesApi
         internal void WriteNewGameFile(Games games)
         {
             string json = JsonConvert.SerializeObject(games, Formatting.Indented);
-            File.WriteAllText(this.FilePath, json);
+            File.WriteAllText(this.GameFilePath, json);
         }
 
         private int? GetNextID()
         {
             int? id = null;
-            Games games = this.ConvertJSONToGames();
-            games.GamesList.ForEach(game => 
+            List<GameDTO> games = this.ConvertJSONToGames();
+            games.ForEach(game => 
                 id = (game.GameId > id || id == null) ? game.GameId : id
             );
 

@@ -1,13 +1,12 @@
-using Newtonsoft.Json;
-using System;
+﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace RetroGamesApi
+namespace RetroGamesApi.DTOs
 {
-    public class Game
+    public class GameDTO
     {
         [JsonProperty("game_id")]
-        public int GameId{ get; set; }
+        public int GameId { get; set; }
 
         [JsonProperty("title")]
         public string Title { get; set; }
@@ -18,13 +17,6 @@ namespace RetroGamesApi
         [JsonProperty("platform_ids")]
         public int[] platformIds { get; set; }
 
-        [JsonProperty("platforms")]
-        public List<Platform> Platforms { get; set; }
-
-        public Game()
-        {
-            Platforms = new List<Platform>();
-        }
     }
 
 }

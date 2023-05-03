@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using RetroGamesApi.DTOs;
 using System.Collections.Generic;
 
 namespace RetroGamesApi
@@ -6,6 +7,6 @@ namespace RetroGamesApi
     public class Games
     {
         [JsonProperty("games")]
-        public List<Game> GamesList { get; set; }
+        public List<GameDTO> GamesList { get; set; }
     }
 }
