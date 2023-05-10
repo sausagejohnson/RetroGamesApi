@@ -26,41 +26,41 @@ namespace RetroGamesApi
             CleanUpDataFiles();
         }
 
-        public List<GameDTO> GetAllGames()
+        public List<GameFullDTO> GetAllGames()
         {
-            List<GameDTO> gamesDtoList = this.ConvertJSONToGames();
+            List<GameFullDTO> gamesDtoList = this.ConvertJSONToFullGamesDTO();
 
             return gamesDtoList;
         }
 
-        public GameDTO GetGameById(int id)
+        public GameFullDTO GetGameById(int id)
         {
-            List<GameDTO> games = this.GetAllGames();
-            GameDTO game = games.FirstOrDefault(g => g.GameId == id);
+            List<GameFullDTO> games = this.GetAllGames();
+            GameFullDTO game = games.FirstOrDefault(g => g.GameId == id);
 
             return game;
         }
 
-        private List<GameDTO> ConvertJSONToGames()
+        private List<GameFullDTO> ConvertJSONToFullGamesDTO()
         {
             CreateDataFilesIfNotExists();
             string jsonContent = File.ReadAllText(this.GameFilePath);
             Games games = JsonConvert.DeserializeObject<Games>(jsonContent);
 
-            List<GameDTO> gameDtoList = GamesToDTO(games);
+            List<GameFullDTO> gameDtoList = GamesToFullDTO(games);
 
             return gameDtoList;
         }
 
-        private List<GameDTO> GamesToDTO(Games games)
+        private List<GameFullDTO> GamesToFullDTO(Games games)
         {
-            List<GameDTO> gamesDtoList = new List<GameDTO>();
+            List<GameFullDTO> gamesDtoList = new List<GameFullDTO>();
             games.GamesList.ForEach(g =>
             {
-                gamesDtoList.Add(new GameDTO
+                gamesDtoList.Add(new GameFullDTO
                 {
                     GameId = g.GameId,
-                    platformIds = g.platformIds,
+                    Platforms = GetPlatformsByPlatformId(g.platformIds),
                     Title = g.Title,
                     Year = g.Year
                 }
@@ -70,12 +70,47 @@ namespace RetroGamesApi
             return gamesDtoList;
         }
 
-        private Games DTOToGames(List<GameDTO> gamesList)
+        private Games FullDtosToGames(List<GameFullDTO> gamesDTOList)
         {
             Games games = new Games();
-            games.GamesList = gamesList;
+
+            gamesDTOList.ForEach(dto => {
+                int[] platformIds = dto.Platforms.Select(p => { return p.PlatformId; } ).ToArray();
+
+                games.GamesList.Add(new Game() { 
+                    GameId = dto.GameId,
+                    Title = dto.Title,
+                    Year = dto.Year,
+                    platformIds = platformIds
+                });
+            });
 
             return games;
+        }
+
+        private Game FullDtoToGame(GameFullDTO fullGameDTO)
+        {
+            Game game = new Game {
+                GameId = fullGameDTO.GameId,
+                Title = fullGameDTO.Title,
+                Year = fullGameDTO.Year,
+                platformIds = fullGameDTO.Platforms.Select(p => { return p.PlatformId; }).ToArray()
+            };
+
+            return game;
+        }
+
+        private GameDTO FullDtoToGameDto(GameFullDTO fullGameDTO)
+        {
+            GameDTO game = new GameDTO
+            {
+                GameId = fullGameDTO.GameId,
+                Title = fullGameDTO.Title,
+                Year = fullGameDTO.Year,
+                platformIds = fullGameDTO.Platforms.Select(p => { return p.PlatformId; }).ToArray()
+            };
+
+            return game;
         }
 
         public Platforms GetAllPlatforms()
@@ -92,33 +127,31 @@ namespace RetroGamesApi
             return platforms;
         }
 
-        public List<GameDTO> AddPlatformIdToGameId(int id, int platformId)
+        public List<GameFullDTO> AddPlatformIdToGameId(int id, int platformId)
         {
-            List<GameDTO> games = this.ConvertJSONToGames();
-            GameDTO game = games.FirstOrDefault(g => g.GameId == id);
+            List<GameFullDTO> fullDtoGames = this.ConvertJSONToFullGamesDTO();
+            GameFullDTO dtoGame = fullDtoGames.FirstOrDefault(g => g.GameId == id);
 
-            if (game == null)
+            if (dtoGame == null)
             {
                 return null;
             }
 
-            if (!game.platformIds.Contains(platformId))
-            {
-                List<int> platformIdList = game.platformIds.ToList();
-                platformIdList.Add(platformId);
+            Platform newPlatform = this.GetPlatformByPlatformId(platformId);
+            dtoGame.Platforms.Add(newPlatform);
 
-                game.platformIds = platformIdList.ToArray();
-            }
-
-            games = UpdateGame(game, game.GameId);
-            return games;
+            GameDTO game = this.FullDtoToGameDto(dtoGame);
+            
+            fullDtoGames = UpdateGame(game, game.GameId);
+            return fullDtoGames;
 
         }
 
-        public List<GameDTO> DeletePlatformIdFromGameId(int id, int platformId)
+        public List<GameFullDTO> DeletePlatformIdFromGameId(int id, int platformId)
         {
-            List<GameDTO> games = this.ConvertJSONToGames();
-            GameDTO game = games.FirstOrDefault(g => g.GameId == id);
+            List<GameFullDTO> fullDtoGames = this.ConvertJSONToFullGamesDTO();
+            GameFullDTO dtoGame = fullDtoGames.FirstOrDefault(g => g.GameId == id);
+            GameDTO game = this.FullDtoToGameDto(dtoGame);
 
             if (game == null)
             {
@@ -127,28 +160,44 @@ namespace RetroGamesApi
 
             if (game.platformIds.Contains(platformId))
             {
-                List<int> platformIdList = game.platformIds.ToList();
-                platformIdList.Remove(platformId);
+                List<Platform> newPlatforms = dtoGame.Platforms;
+                newPlatforms.Remove(this.GetPlatformByPlatformId(platformId));
 
-                game.platformIds = platformIdList.ToArray();
+                game.platformIds = newPlatforms.Select(p => p.PlatformId).ToArray();
             }
 
-            games = UpdateGame(game, game.GameId);
-            return games;
+            List<GameFullDTO> updatedGames = UpdateGame(game, game.GameId);
+            return updatedGames; 
 
         }
 
         public List<Platform> GetPlatformsByGameId(int id)
         {
-            List<GameDTO> games = this.ConvertJSONToGames();
-            GameDTO game = games.FirstOrDefault(g => g.GameId == id);
+            List<GameFullDTO> games = this.ConvertJSONToFullGamesDTO();
+            GameFullDTO game = games.FirstOrDefault(g => g.GameId == id);
             if (game == null)
             {
                 return null;
             }
 
+            //List<Platform> platforms = game.Platforms;//this.ConvertJSONToPlatforms();
+            //List<Platform> gamePlatforms = platforms.PlatformsList.FindAll(p => game.platformIds.Contains(p.PlatformId));
+
+            return game.Platforms;
+        }
+
+        public Platform GetPlatformByPlatformId(int id)
+        {
             Platforms platforms = this.ConvertJSONToPlatforms();
-            List<Platform> gamePlatforms = platforms.PlatformsList.FindAll(p => game.platformIds.Contains(p.PlatformId));
+            Platform gamePlatform = platforms.PlatformsList.FirstOrDefault(p => p.PlatformId == id);
+
+            return gamePlatform;
+        }
+
+        public List<Platform> GetPlatformsByPlatformId(int[] ids)
+        {
+            Platforms platforms = this.ConvertJSONToPlatforms();
+            List<Platform> gamePlatforms = platforms.PlatformsList.FindAll(p => ids.Contains(p.PlatformId));
 
             return gamePlatforms;
         }
@@ -169,7 +218,7 @@ namespace RetroGamesApi
             }
         }
 
-        public List<GameDTO> AddGame(GameDTO newGame)
+        public List<GameFullDTO> AddGame(GameDTO newGame)
         {
             newGame.GameId = this.GetNextID().Value;
             
@@ -178,51 +227,68 @@ namespace RetroGamesApi
                 newGame.platformIds = new int[0];
             }
 
-            List<GameDTO> dtoGames = this.ConvertJSONToGames();
-            dtoGames.Add(newGame);
+            List<GameFullDTO> dtoGames = GetAllGames();
+            Games games = FullDtosToGames(dtoGames);
 
-            Games games = DTOToGames(dtoGames);
+            games.GamesList.Add(new Game { 
+                GameId = newGame.GameId,
+                Title = newGame.Title, 
+                Year = newGame.Year,
+                platformIds = newGame.platformIds
+            });
+
             this.WriteNewGameFile(games);
 
             return dtoGames;
         }
 
-        public List<GameDTO> UpdateGame(GameDTO updatedGame, int gameId)
+        public List<GameFullDTO> UpdateGame(GameDTO updatedGame, int gameId)
         {
             if (gameId == 0)
                 return null;
 
-            List<GameDTO> dtoGames = this.ConvertJSONToGames();
-            GameDTO dtoGame = dtoGames.Find(x => x.GameId == gameId);
+            List<GameFullDTO> dtoGames = this.ConvertJSONToFullGamesDTO();
 
-            if (dtoGame == null)
+            if (updatedGame == null)
             {
                 return null;
-            } 
+            }
 
-            if (updatedGame.Title != null)
-                dtoGame.Title = updatedGame.Title;
+            Games games = this.FullDtosToGames(dtoGames);
+            Game game = games.GamesList.Find(x => x.GameId == gameId);
+            GameFullDTO fullDtoGame = dtoGames.Find(x => x.GameId == gameId);
+
+
+            if (updatedGame.Title != null) { 
+                game.Title = updatedGame.Title;
+                fullDtoGame.Title = updatedGame.Title; 
+            }
             if (updatedGame.Year > 0)
-                dtoGame.Year = updatedGame.Year;
-            if (updatedGame.platformIds != null) 
-                dtoGame.platformIds = updatedGame.platformIds; 
+            {
+                game.Year = updatedGame.Year;
+                fullDtoGame.Year = updatedGame.Year;
+            }
+            if (updatedGame.platformIds != null)
+            {
+                game.platformIds = updatedGame.platformIds;
+                fullDtoGame.Platforms = this.GetPlatformsByPlatformId(updatedGame.platformIds);
+            }
 
-            Games games = DTOToGames(dtoGames);
             this.WriteNewGameFile(games);
 
             return dtoGames;
         }
 
-        public List<GameDTO> DeleteGame(int gameIdToDelete)
+        public List<GameFullDTO> DeleteGame(int gameIdToDelete)
         {
-            List<GameDTO> dtoGames = this.ConvertJSONToGames();
-            GameDTO game = dtoGames.Find(x => x.GameId == gameIdToDelete);
+            List<GameFullDTO> dtoGames = this.ConvertJSONToFullGamesDTO();
+            GameFullDTO game = dtoGames.Find(x => x.GameId == gameIdToDelete);
 
             if (game != null)
             {
                 dtoGames.Remove(game);
 
-                Games games = this.DTOToGames(dtoGames);
+                Games games = this.FullDtosToGames(dtoGames);
                 this.WriteNewGameFile(games);
 
                 return dtoGames;
@@ -239,7 +305,7 @@ namespace RetroGamesApi
         private int? GetNextID()
         {
             int? id = null;
-            List<GameDTO> games = this.ConvertJSONToGames();
+            List<GameFullDTO> games = this.ConvertJSONToFullGamesDTO();
             games.ForEach(game => 
                 id = (game.GameId > id || id == null) ? game.GameId : id
             );

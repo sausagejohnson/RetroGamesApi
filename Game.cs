@@ -2,6 +2,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
+//Main object class used for serialisation/deserialisation.
 namespace RetroGamesApi
 {
     public class Game
@@ -18,12 +19,8 @@ namespace RetroGamesApi
         [JsonProperty("platform_ids")]
         public int[] platformIds { get; set; }
 
-        [JsonProperty("platforms")]
-        public List<Platform> Platforms { get; set; }
-
         public Game()
         {
-            Platforms = new List<Platform>();
         }
     }
 

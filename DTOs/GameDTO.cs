@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace RetroGamesApi.DTOs
 {
+    //DTO used for saving back from a client
     public class GameDTO
     {
         [JsonProperty("game_id")]
